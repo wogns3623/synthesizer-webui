@@ -113,11 +113,11 @@ export default function Home() {
   const synthesizeCode = useCallback(async (input: string) => {
     const result = await fetch("/api/synthesize", {
       method: "POST",
-      body: JSON.stringify({ input } satisfies SynthesizeRequestData),
+      body: input,
     });
 
-    const body = (await result.json()) as SynthesizeResponseData;
-    setOutput(body.message);
+    const output = (await result.text()) as string;
+    setOutput(output);
   }, []);
 
   const executeResult = useCallback(async (output: string) => {
