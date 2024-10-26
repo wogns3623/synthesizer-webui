@@ -1,4 +1,4 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Synthesizer web UI
 
 ## Getting Started
 
@@ -6,31 +6,42 @@ First, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 각 입력 섹션별 UI view
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Type definition
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- 각 정의된 타입에 대한 리스트
+- 타입 추가 버튼
+  - 정의된 / 기본 타입 선택 가능
 
-## Learn More
+### Function definition
 
-To learn more about Next.js, take a look at the following resources:
+- 예제 함수 선택기
+  - 함수에 필요한 타입도 자동으로 추가
+- 함수 이름만으로 축약된 리스트 & 펼쳐서 내용 확인
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Synthesized function signature
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 정의된 타입으로부터 arguments, return type 선택
 
-## Deploy on Vercel
+### Function input / outputs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- 각 입/출력에 대한 tab view
+  - tree나 list타입도 동일한 ui로 보여주기 위함
+  - 근데 이러면 tab이 3단이라서 너무 깊어진 느낌 들 수 있음
+- 함수 signature에 맞게 빈칸 생성?
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Design decisions
+
+- 합성이 오래걸리는 문제의 경우 언제 끊어야 하는지/실패했다고 보여줘야 하는지
+- 잘못된/작성중인 입력에 대해서 feedback 언제줄건지
+  - code / ui view 전환할 때
+
+## TODO
+
+- Add loading ui for pending synthesizer response
+- Add ui view for each input section
+- Add some prepared funtion, select&add ui
+- code view일때는 파싱하지 않고 ui view로 전환할 때만 파싱
