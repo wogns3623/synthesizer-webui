@@ -1,22 +1,12 @@
 "use client";
 
-import AceEditor from "react-ace";
-import "ace-builds/src-noconflict/mode-ocaml";
-import "ace-builds/src-noconflict/theme-github_dark";
-import "ace-builds/src-noconflict/ext-language_tools";
-import { useCallback, useMemo, useRef, useState } from "react";
-import type {
-  SynthesizeRequestData,
-  SynthesizeResponseData,
-} from "./api/synthesize/route";
-import type {
-  ExecuteRequestData,
-  ExecuteResponseData,
-} from "./api/execute/route";
-import { datas } from "@/const/data";
+import { useCallback, useState } from "react";
+import { examples } from "@/constants/data";
+import { Editor } from "@/components/Editor";
+import { CodeView } from "@/components/CodeView";
+import { UIView } from "@/components/UI/UIView";
 
-const testInput = [
-  `type nat =
+const testInput = `type nat =
 | O
 | S of nat
 
@@ -27,8 +17,9 @@ type bool =
 type cmp =
   | LT
   | EQ
-  | GT`,
-  `let compare =
+  | GT
+
+let compare =
   fix (compare : nat -> nat -> cmp) =
     fun (x1 : nat) ->
       fun (x2 : nat) ->
@@ -39,9 +30,11 @@ type cmp =
         | S x1 -> (match x2 with
                 | O -> GT
                 | S x2 -> compare x1 x2)
-;;`,
-  `synth nat -> nat -> nat satisfying`,
-  `[0,0] -> 0,
+;;
+
+synth nat -> nat -> nat satisfying
+
+[0,0] -> 0,
 [0,1] -> 1,
 [0,2] -> 2,
 [1,0] -> 1,
@@ -49,8 +42,7 @@ type cmp =
 [1,2] -> 2,
 [2,0] -> 2,
 [2,1] -> 2,
-[2,2] -> 2`,
-];
+[2,2] -> 2`;
 
 const testOutput = `(* If you entered the input format incorrectly, return the following message. *)
 -> 
@@ -74,69 +66,28 @@ const sampleResult =
 
 export default function Home() {
   const [showRaw, setShowRaw] = useState(false);
-  const [input1, setInput1] = useState(testInput[0]);
-  const [input2, setInput2] = useState(testInput[1]);
-  const [input3, setInput3] = useState(testInput[2]);
-  const [input4, setInput4] = useState(testInput[3]);
-
-  const input = useMemo(
-    () => input1 + "\n\n\n" + input2 + "\n\n\n" + input3 + "\n\n\n" + input4,
-    [input1, input2, input3, input4]
-  );
-  const setInput = useCallback((input: string) => {
-    const splitted = input.split(/^synth/gm);
-    let defs = splitted[0];
-    const signatures = splitted[1];
-
-    const typeDefs: string[] = [];
-    const matchResult = defs.match(/type\s*\w*\s*=(:?\s*\|\s*[\w "]*)*/g);
-    if (matchResult) {
-      matchResult.forEach((r) => typeDefs.push(r));
-      defs = defs.substring(
-        defs.search(matchResult[matchResult.length - 1]) +
-          matchResult[matchResult.length - 1].length
-      );
-    }
-    const prepared = defs;
-
-    const [signature, ...IOs] = signatures.split("\n");
-
-    setInput1(typeDefs.join("\n\n"));
-    setInput2(prepared.trim());
-    setInput3("synth" + signature);
-    setInput4(IOs.join("\n").trim());
-  }, []);
-
+  const [input, setInput] = useState(testInput);
   const [output, setOutput] = useState(testOutput);
   const [result, setResult] = useState(sampleResult);
 
   const synthesizeCode = useCallback(async (input: string) => {
-    const result = await fetch("/api/synthesize", {
-      method: "POST",
-      body: input,
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_PATH}/synthesize`,
+      { method: "POST", body: input }
+    );
 
-    const output = (await result.text()) as string;
+    const output = (await response.text()) as string;
     setOutput(output);
   }, []);
 
   const executeResult = useCallback(async (output: string) => {
-    const result = await fetch("/api/execute", {
-      method: "POST",
-      body: JSON.stringify({ output } satisfies ExecuteRequestData),
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_PATH}/execute`,
+      { method: "POST", body: output }
+    );
 
-    const body = (await result.json()) as ExecuteResponseData;
-    setResult(body.message);
-  }, []);
-
-  const uiTabRef = useRef<HTMLDivElement[]>([]);
-
-  const selectUITab = useCallback((index: number) => {
-    uiTabRef.current[index].scrollIntoView({
-      behavior: "instant",
-      block: "start",
-    });
+    const result = (await response.text()) as string;
+    setResult(result);
   }, []);
 
   return (
@@ -149,7 +100,7 @@ export default function Home() {
             onChange={(e) => setInput(e.currentTarget.value)}
           >
             <option defaultChecked>select examples</option>
-            {Object.entries(datas).map(([name, input]) => (
+            {Object.entries(examples).map(([name, input]) => (
               <option value={input} key={name}>
                 {name}
               </option>
@@ -160,6 +111,7 @@ export default function Home() {
             className="px-4 hover:bg-neutral-600"
             onClick={() => setShowRaw((prev) => !prev)}
           >
+            {/* TODO: Add visual toggle button? */}
             {"toggle code <-> ui"}
           </button>
 
@@ -172,104 +124,13 @@ export default function Home() {
         </header>
 
         {showRaw ? (
-          <AceEditor
-            mode="ocaml"
-            theme="github_dark"
-            width="auto"
-            height="auto"
-            className="flex-1"
-            defaultValue={input}
-            value={input}
-            onChange={(value) => setInput(value)}
-          />
+          <CodeView className="flex-1" input={input} setInput={setInput} />
         ) : (
-          <section className="flex-1 flex flex-col bg-neutral-800 text-white">
-            <header className="flex h-8 bg-opacity-60 bg-neutral-700 px-4">
-              <div
-                className="flex-1 px-2 py-1 flex justify-center items-center hover:bg-neutral-600"
-                onClick={() => selectUITab(0)}
-              >
-                타입 정의
-              </div>
-              <div
-                className="flex-1 px-2 py-1 flex justify-center items-center hover:bg-neutral-600"
-                onClick={() => selectUITab(1)}
-              >
-                helper 함수
-              </div>
-              <div
-                className="flex-1 px-2 py-1 flex justify-center items-center hover:bg-neutral-600"
-                onClick={() => selectUITab(2)}
-              >
-                함수 signature
-              </div>
-              <div
-                className="flex-1 px-2 py-1 flex justify-center items-center hover:bg-neutral-600"
-                onClick={() => selectUITab(3)}
-              >
-                예제 입출력
-              </div>
-            </header>
-
-            <section className="flex-1 flex p-4">
-              <div className="flex-1 flex overflow-hidden gap-x-8 text-black *:flex-shrink-0 *:h-full">
-                <div
-                  className="relative w-full h-40 overflow-auto bg-white p-4 gap-y-4"
-                  ref={(el) => {
-                    if (el) uiTabRef.current[0] = el;
-                  }}
-                >
-                  <div>
-                    {input1
-                      .split("\n")
-                      .flatMap((line, key) => [line, <br key={key} />])}
-                  </div>
-                </div>
-
-                <div
-                  className="relative w-full h-40 overflow-auto bg-white p-4 gap-y-4"
-                  ref={(el) => {
-                    if (el) uiTabRef.current[1] = el;
-                  }}
-                >
-                  <div>
-                    {input2
-                      .split("\n")
-                      .flatMap((line, key) => [line, <br key={key} />])}
-                  </div>
-                </div>
-
-                <div
-                  className="relative w-full h-40 overflow-auto bg-white p-4 gap-y-4"
-                  ref={(el) => {
-                    if (el) uiTabRef.current[2] = el;
-                  }}
-                >
-                  <div>
-                    {input3
-                      .split("\n")
-                      .flatMap((line, key) => [line, <br key={key} />])}
-                  </div>
-                </div>
-
-                <div
-                  className="relative w-full h-40 overflow-auto bg-white p-4 gap-y-4"
-                  ref={(el) => {
-                    if (el) uiTabRef.current[3] = el;
-                  }}
-                >
-                  <div>
-                    {input4
-                      .split("\n")
-                      .flatMap((line, key) => [line, <br key={key} />])}
-                  </div>
-                </div>
-              </div>
-            </section>
-          </section>
+          <UIView className="flex-1" input={input} setInput={setInput} />
         )}
       </section>
 
+      {/* TODO: Add drag feature to adjust section size */}
       <div className="flex flex-col w-4">
         <header className="h-12 bg-neutral-700" />
         <div className="flex-1 flex flex-col justify-center items-center bg-neutral-800">
@@ -285,6 +146,7 @@ export default function Home() {
       <section className="flex-1">
         <header className="flex h-12 bg-neutral-700 pr-4 text-white">
           <button className="px-4 hover:bg-neutral-600">share</button>
+
           <button
             className="px-4 hover:bg-neutral-600"
             onClick={() => executeResult(output)}
@@ -293,7 +155,7 @@ export default function Home() {
           </button>
         </header>
 
-        <AceEditor
+        <Editor
           mode="ocaml"
           theme="github_dark"
           width="auto"

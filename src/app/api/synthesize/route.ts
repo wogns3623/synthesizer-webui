@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
-import { exec, spawn } from "child_process";
-import { ReadableStream, WritableStream } from "stream/web";
-import { Readable } from "stream";
-import path from "path";
+import { exec } from "child_process";
+import { WritableStream } from "stream/web";
 
 export type SynthesizeResponseData = {
   message: string;

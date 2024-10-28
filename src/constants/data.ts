@@ -1,4 +1,4 @@
-export const datas = {
+export const examples = {
   "bool_always_false.mls":
     "type bool =\n  | False\n  | True\n\nsynth bool -> bool satisfying\n\n[True] -> False,\n[False] -> False\n",
   "bool_always_true.mls":

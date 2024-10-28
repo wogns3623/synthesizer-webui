@@ -15,6 +15,7 @@ npm run dev
 - 각 정의된 타입에 대한 리스트
 - 타입 추가 버튼
   - 정의된 / 기본 타입 선택 가능
+- 타입 작성은 string input VS select from list
 
 ### Function definition
 
