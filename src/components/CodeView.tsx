@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch } from "react";
 import { Editor } from "./Editor";
 
 export interface CodeViewProps {

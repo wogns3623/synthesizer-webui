@@ -3,6 +3,7 @@ import { TypeView } from "./type/TypeView";
 import { FunctionView } from "./function/FunctionView";
 import { SignatureView } from "./signature/SignatureView";
 import { ExampleView } from "./example/ExampleView";
+import { useSetter } from "@/hooks/useSetter";
 
 export interface UIViewProps {
   input: string;
@@ -10,39 +11,35 @@ export interface UIViewProps {
   className?: string;
 }
 
+interface ParsedInput {
+  readonly types: string[];
+  readonly functions: string[];
+  readonly signature: string;
+  readonly examples: string[];
+}
+
 // NOTE: context쓰면 더 좋을수도?
 export function UIView({ input, setInput, className }: UIViewProps) {
-  const [types, functions, signature, examples] = useMemo(() => {
-    const splitted = input.split(/^synth/gm);
-    let defs = splitted[0];
-    const signatures = splitted[1];
-
-    const types: string[] = [];
-    const matchResult = defs.match(/type\s*\w*\s*=(:?\s*\|\s*[\w "]*)*/g);
-    if (matchResult) {
-      matchResult.forEach((r) => types.push(r));
-      defs = defs.substring(
-        defs.search(matchResult[matchResult.length - 1]) +
-          matchResult[matchResult.length - 1].length
-      );
-    }
-
-    // TODO Split functions
-    const functions = defs
-      .split(";;")
-      .map((v) => v.trim())
-      .filter((v) => v.length > 0)
-      .map((v) => v + "\n;;");
-
-    const [signature, ...examples] = signatures.split("\n");
-
-    return [
-      types,
-      functions,
-      "synth" + signature,
-      examples.map((v) => v.trim()),
-    ] as const;
+  const parsedInput = useMemo(() => {
+    return parseInput(input);
   }, [input]);
+
+  const updateInput = useSetter(
+    parsedInput,
+    (value) => {
+      setInput(
+        [
+          value.types.join("\n\n"),
+          value.functions.join("\n\n"),
+          value.signature,
+          value.examples.join("\n"),
+        ]
+          .filter((v) => v.trim().length > 0)
+          .join("\n\n\n")
+      );
+    },
+    [setInput]
+  );
 
   const uiTabRef = useRef<HTMLDivElement[]>([]);
 
@@ -91,7 +88,20 @@ export function UIView({ input, setInput, className }: UIViewProps) {
               if (el) uiTabRef.current[0] = el;
             }}
           >
-            <TypeView types={types} />
+            <TypeView
+              types={parsedInput.types}
+              setTypes={(valueOrFn) => {
+                updateInput((prev) => {
+                  return {
+                    ...prev,
+                    types:
+                      typeof valueOrFn === "function"
+                        ? valueOrFn(prev.types)
+                        : valueOrFn,
+                  };
+                });
+              }}
+            />
           </div>
 
           <div
@@ -100,7 +110,7 @@ export function UIView({ input, setInput, className }: UIViewProps) {
               if (el) uiTabRef.current[1] = el;
             }}
           >
-            <FunctionView functions={functions} />
+            <FunctionView functions={parsedInput.functions} />
           </div>
 
           <div
@@ -109,7 +119,7 @@ export function UIView({ input, setInput, className }: UIViewProps) {
               if (el) uiTabRef.current[2] = el;
             }}
           >
-            <SignatureView signature={signature} />
+            <SignatureView signature={parsedInput.signature} />
           </div>
 
           <div
@@ -118,10 +128,44 @@ export function UIView({ input, setInput, className }: UIViewProps) {
               if (el) uiTabRef.current[3] = el;
             }}
           >
-            <ExampleView examples={examples} />
+            <ExampleView examples={parsedInput.examples} />
           </div>
         </div>
       </section>
     </section>
   );
+}
+
+function parseInput(input: string): ParsedInput {
+  const splitted = input.split(/^synth/gm);
+  let defs = splitted[0];
+  const signatures = splitted[1];
+
+  const types: string[] = [];
+  const matchResult = defs.match(
+    /type\s*\w*\s*=(:?\s*[\w "]*)?(:?\s*\|\s*[\w "*]*)*/g
+  );
+  if (matchResult) {
+    matchResult.forEach((r) => {
+      types.push(r);
+      defs = defs.substring(defs.search(r) + r.length);
+      defs.trim();
+    });
+  }
+
+  // TODO Split functions
+  const functions = defs
+    .split(";;")
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0)
+    .map((v) => v + "\n;;");
+
+  const [signature, ...examples] = signatures.split("\n");
+
+  return {
+    types,
+    functions,
+    signature: "synth" + signature,
+    examples: examples.map((v) => v.trim()).filter((v) => v.length > 0),
+  };
 }
