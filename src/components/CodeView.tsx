@@ -12,9 +12,9 @@ export function CodeView({ input, setInput, className }: CodeViewProps) {
     <Editor
       mode="ocaml"
       theme="github_dark"
-      width="auto"
-      height="auto"
-      className={className}
+      width="100%"
+      height="100%"
+      className={className ?? ""}
       defaultValue={input}
       value={input}
       onChange={(value) => setInput(value)}
