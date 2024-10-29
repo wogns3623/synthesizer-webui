@@ -18,10 +18,15 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  @apply scrollbar-thin scrollbar-track-transparent scrollbar-thumb-neutral-600 scrollbar-corner-transparent;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+body .ace_scrollbar {
+  @apply scrollbar-thin scrollbar-track-transparent scrollbar-thumb-neutral-600 scrollbar-corner-transparent;
 }

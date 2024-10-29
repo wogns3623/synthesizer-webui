@@ -6,7 +6,6 @@ import { Editor } from "@/components/Editor";
 import { CodeView } from "@/components/CodeView";
 import { UIView } from "@/components/UI/UIView";
 import { useSearchParams } from "next/navigation";
-import { Bounce, toast, ToastContainer } from "react-toastify";
 
 const testInput = `type nat =
 | O
@@ -63,9 +62,6 @@ let rec (f : ((nat, nat) -> nat)) =
       (x).1
 `;
 
-const sampleResult =
-  "> 코드 실행 결과물 & 예제 입출력 만족하는지 보여주는 섹션";
-
 export default function Home() {
   const searchParams = useSearchParams();
 
@@ -74,7 +70,6 @@ export default function Home() {
   const [output, setOutput] = useState(
     searchParams.get("input") ? "" : testOutput
   );
-  const [result, setResult] = useState(sampleResult);
 
   const synthesizeCode = useCallback(async (input: string) => {
     const response = await fetch(
@@ -84,16 +79,6 @@ export default function Home() {
 
     const output = (await response.text()) as string;
     setOutput(output);
-  }, []);
-
-  const executeResult = useCallback(async (output: string) => {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_PATH}/execute`,
-      { method: "POST", body: output }
-    );
-
-    const result = (await response.text()) as string;
-    setResult(result);
   }, []);
 
   return (
@@ -134,7 +119,7 @@ export default function Home() {
           </div>
 
           <div
-            className={`transition-all basis-0 flex-shrink overflow-hidden z-[2] shadow-[#26262645_0px_-10px_10px_0px] ${
+            className={`transition-all basis-0 flex-shrink overflow-hidden z-[2] shadow-[#26262680_0px_-10px_10px_0px] ${
               showExampleUI ? "flex-grow" : "flex-grow-0"
             }`}
           >
@@ -164,40 +149,9 @@ export default function Home() {
               navigator.clipboard.writeText(
                 "http://localhost:3000/?input=" + encodeURIComponent(input)
               );
-              // toast.info("🦄 Wow so easy!", {
-              //   position: "top-center",
-              //   autoClose: 1000,
-              //   hideProgressBar: false,
-              //   closeOnClick: false,
-              //   pauseOnHover: true,
-              //   draggable: true,
-              //   progress: undefined,
-              //   theme: "dark",
-              //   transition: Bounce,
-              // });
             }}
           >
-            share
-            {/* <ToastContainer
-              position="top-center"
-              autoClose={1000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick={false}
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="dark"
-              transition={Bounce}
-            /> */}
-          </button>
-
-          <button
-            className="px-4 hover:bg-neutral-600"
-            onClick={() => executeResult(output)}
-          >
-            test result
+            share links
           </button>
         </header>
 
