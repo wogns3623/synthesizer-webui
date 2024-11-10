@@ -10,6 +10,7 @@ npm run dev
 
 ## 각 입력 섹션별 UI view
 
+<!--
 ### Type definition
 
 - 각 정의된 타입에 대한 리스트
@@ -25,14 +26,16 @@ npm run dev
 
 ### Synthesized function signature
 
-- 정의된 타입으로부터 arguments, return type 선택
+- 정의된 타입으로부터 arguments, return type 선택 -->
 
 ### Function input / outputs
 
 - 각 입/출력에 대한 tab view
   - tree나 list타입도 동일한 ui로 보여주기 위함
   - 근데 이러면 tab이 3단이라서 너무 깊어진 느낌 들 수 있음
-- 함수 signature에 맞게 빈칸 생성?
+  <!-- - 함수 signature에 맞게 빈칸 생성? -->
+- 수정도 필요없고 보여주기만 하면 됨
+- 가능한 경우에만
 
 ## Design decisions
 

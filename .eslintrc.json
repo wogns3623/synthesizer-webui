@@ -4,6 +4,7 @@
   "rules": {
     // disable original rule
     "react-hooks/exhaustive-deps": "off",
+    "@typescript-eslint/no-namespace": "off",
     "@wogns3623/better-exhaustive-deps/exhaustive-deps": [
       "warn",
       {
