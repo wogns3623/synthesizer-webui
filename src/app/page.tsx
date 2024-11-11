@@ -84,7 +84,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex">
       {/* input */}
-      <section className="flex-1 flex flex-col relative">
+      <section className="w-[calc(50%-0.5rem)] flex flex-col relative">
         <header className="flex h-12 bg-neutral-700 px-4 text-white">
           <select
             className="px-2 bg-neutral-700 hover:bg-neutral-600"
@@ -141,7 +141,7 @@ export default function Home() {
       </div>
 
       {/* output */}
-      <section className="flex-1 flex flex-col">
+      <section className="w-[calc(50%-0.5rem)] flex flex-col">
         <header className="flex h-12 bg-neutral-700 pr-4 text-white">
           <button
             className="px-4 hover:bg-neutral-600"
