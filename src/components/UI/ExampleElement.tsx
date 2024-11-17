@@ -1,65 +1,35 @@
-import { ParsedInput } from "@/hooks/useParsedInput";
-import { useMemo } from "react";
+import { ParsedInput } from "@/utils/parsedInput";
+import { Value } from "./Value";
 
 export interface ExampleElementProps {
   types: ParsedInput.Type[];
   signature: ParsedInput.Signature;
   example: ParsedInput.Example;
+  className?: string;
 }
 
-export function ExampleElement({ example }: ExampleElementProps) {
-  const types = useMemo(() => parseInputType(example), [example]);
-
+export function ExampleElement({
+  example,
+  className = "",
+}: ExampleElementProps) {
   return (
-    <div>
-      <header>
-        {"signature: ["}
-        {types.args
-          .flatMap((v, index) => [
-            <span key={index + v}>{v}</span>,
-            <span key={"delim_" + index}>{", "}</span>,
-          ])
-          .slice(0, -1)}
-        {"] -> "} {types.result}
-      </header>
-      <div>
-        {example.args
-          .flatMap((v, index) => [
-            <span key={index + v}>{v}</span>,
-            <span key={"delim_" + index}>{", "}</span>,
-          ])
-          .slice(0, -1)}
-        <span>{" -> "}</span>
-        <span>{example.result}</span>
+    <section className={`flex flex-col justify-between ${className}`}>
+      {/* input visualize */}
+      <div className="flex-1 flex flex-col p-4 gap-y-4 border-b-[1px] border-dashed border-neutral-500">
+        {example.args.map((arg, index) => (
+          <Value
+            value={arg}
+            key={index + (typeof arg === "string" ? arg : arg.raw)}
+          />
+        ))}
       </div>
-    </div>
+
+      {/* output visualize */}
+      <div className="flex items-center p-4 gap-x-4">
+        <h3 className="text-3xl">{"=>"}</h3>
+
+        <Value value={example.result} />
+      </div>
+    </section>
   );
-}
-
-function parseInputType(example: ParsedInput.Example): {
-  args: ParsedInput.Type.All[];
-  result: ParsedInput.Type.All;
-} {
-  for (const arg of example.args) {
-    getTypeFromValue(arg);
-  }
-
-  return {
-    args: example.args.map(getTypeFromValue),
-    result: getTypeFromValue(example.result),
-  };
-}
-
-function getTypeFromValue(value: string): ParsedInput.Type.All {
-  if (
-    value.startsWith("Nil") ||
-    value.startsWith("Cons") ||
-    value.startsWith("LNil") ||
-    value.startsWith("LCons")
-  )
-    return "linkedList";
-
-  if (value.startsWith("Leaf") || value.startsWith("Node")) return "tree";
-
-  return "unknown";
 }
