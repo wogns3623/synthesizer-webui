@@ -13,12 +13,12 @@ function Value({ value }: ValueProps) {
   const parsed = parseValue(value);
 
   if (parsed.type === ParsedInput.Type.Kind.LinkedList)
-    return <LinkedListValue value={parsed.value} />;
+    return <LinkedListValue value={parsed} />;
 
   if (parsed.type === ParsedInput.Type.Kind.Tree)
-    return <TreeValue value={parsed.value} />;
+    return <TreeValue value={parsed} />;
 
-  return <UnknownValue value={value} />;
+  return <UnknownValue value={parsed} />;
 }
 
 const memoizedValue = memo(Value);

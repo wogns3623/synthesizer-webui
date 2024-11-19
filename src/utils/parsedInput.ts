@@ -38,6 +38,7 @@ export namespace ParsedInput {
     export enum UserDefined {
       Function = "function",
       Tuple = "tuple",
+      Constructor = "constructor",
       Varients = "varients",
       Record = "record",
       Aliases = "aliases",
@@ -51,77 +52,128 @@ export namespace ParsedInput {
     export type All = Unknown | Primitive | UserDefined | Kind;
   }
 
-  export namespace Value {
-    export type Unknown = string;
+  export abstract class Value {
+    abstract readonly type: Type.All;
+    abstract readonly raw: string;
 
-    export class Constructor {
-      name: string;
-      args: (string | Constructor)[];
+    toString() {
+      return this.raw;
+    }
+  }
+
+  export namespace Value {
+    export class Unknown extends Value {
+      readonly type = Type.Unknown.Unknown;
+      constructor(readonly raw: string) {
+        super();
+      }
+    }
+
+    export class Constructor extends Value {
+      readonly type = Type.UserDefined.Constructor;
+      readonly name: string;
+      readonly args: (Unknown | Constructor)[];
       parent?: Constructor;
 
-      constructor(name: string, parent?: Constructor) {
+      constructor(name: string) {
+        super();
         this.name = name;
         this.args = [];
-        this.parent = parent;
       }
 
-      push(child: string | Constructor) {
-        this.args.push(child);
-      }
-
-      pop() {
-        return this.args.pop();
+      addArgument(arg: Unknown | Constructor) {
+        this.args.push(arg);
+        if (arg instanceof Constructor) arg.parent = this;
       }
 
       get raw(): string {
         return `${this.name}(${this.args.map((arg) =>
-          arg instanceof Constructor ? arg.raw : arg
+          arg instanceof Constructor ? arg.raw : arg.raw
         )})`;
       }
     }
 
-    export type LinkedList = Any[];
+    export class LinkedList<T extends Any = Any> extends Value {
+      readonly type = Type.Kind.LinkedList;
+      readonly name: string;
+      readonly elements: T[] = [];
 
-    interface TreeBase {
-      isLeaf: boolean;
-      value?: Any;
-      children: Any[];
+      constructor(name: string) {
+        super();
+        this.name = name;
+      }
+
+      connect(list: LinkedList<T>) {
+        this.elements.push(...list.elements);
+      }
+
+      get raw() {
+        return this.rawRecursive();
+      }
+
+      private rawRecursive(index = 0): string {
+        if (this.elements.length === index) return "Nil";
+        return `Cons(${this.elements[index].raw},${this.rawRecursive(
+          index + 1
+        )})`;
+      }
     }
-    export interface TreeLeaf extends TreeBase {
-      isLeaf: true;
-      value: never;
-      children: [];
+
+    export abstract class Tree extends Value {
+      readonly type = Type.Kind.Tree;
+      readonly isLeaf: boolean = true;
+      parent?: Tree.Node;
+
+      get raw() {
+        return "";
+      }
     }
-    export interface TreeNode extends TreeBase {
-      isLeaf: false;
-      value: Any;
-      children: Any[];
+
+    export namespace Tree {
+      export class Leaf extends Tree {
+        readonly isLeaf = true;
+      }
+
+      export class Node extends Tree {
+        readonly isLeaf = false;
+        readonly value: Any;
+        readonly children: Tree[] = [];
+
+        constructor(value: Any, children: Tree[] = []) {
+          super();
+          this.value = value;
+          children.forEach((v) => this.addChild(v));
+        }
+
+        addChild(child: Tree) {
+          this.children.push(child);
+          child.parent = this;
+        }
+      }
     }
-    export type Tree = TreeLeaf | TreeNode;
 
-    export type Any = Unknown | LinkedList | Tree;
-
-    export type Intermediate = string | Constructor;
+    export type Intermediate = Unknown | Constructor;
+    export type Any = Intermediate | LinkedList | Tree;
   }
 
-  interface ValueBase {
-    type: Type.All;
-    value: Value.Any;
-  }
-  interface ValueLinkedList extends ValueBase {
-    type: Type.Kind.LinkedList;
-    value: Value.LinkedList;
-  }
-  interface ValueTree extends ValueBase {
-    type: Type.Kind.Tree;
-    value: Value.Tree;
-  }
-  interface ValueUnknown extends ValueBase {
-    type: Exclude<Type.All, Type.Kind>;
-    value: Exclude<Value.Any, Value.LinkedList | Value.Tree>;
-  }
+  // interface ValueBase {
+  //   type: Type.All;
+  //   value: Value.Any;
+  // }
+  // interface ValueLinkedList extends ValueBase {
+  //   type: Type.Kind.LinkedList;
+  //   value: Value.LinkedList;
+  // }
+  // interface ValueTree extends ValueBase {
+  //   type: Type.Kind.Tree;
+  //   value: Value.Tree;
+  // }
+  // interface ValueUnknown extends ValueBase {
+  //   type: Exclude<Type.All, Type.Kind>;
+  //   value: Exclude<Value.Any, Value.LinkedList | Value.Tree>;
+  // }
 
-  export type Value = ValueTree | ValueLinkedList | ValueUnknown;
+  // export type Value = ValueTree | ValueLinkedList | ValueUnknown;
 }
 
 export interface ParsedInput {
@@ -139,26 +191,117 @@ function parseConstructor(value: string): ParsedInput.Value.Intermediate[] {
     new ParsedInput.Value.Constructor("default");
 
   // find first Constructor symbol
-  while (value.length > 0) {
-    console.log(value);
+  do {
+    // console.log(value);
     let match: RegExpExecArray | null = null;
-    if ((match = /^\),?/.exec(value))) {
+    if ((match = /^\)(?:\s*,)?/.exec(value))) {
       if (current.parent) current = current.parent;
-    } else if ((match = /^(\w+?)\(/.exec(value))) {
-      const sub = new ParsedInput.Value.Constructor(match[1], current);
-      current.push(sub);
+    } else if ((match = /^(\w+?)\s*\(/.exec(value))) {
+      const sub = new ParsedInput.Value.Constructor(match[1]);
+      current.addArgument(sub);
       current = sub;
-    } else if ((match = /(\w+),?/.exec(value))) {
-      current.push(match[1]);
+    } else if ((match = /(\w+)(?:\s*,)?/.exec(value))) {
+      current.addArgument(new ParsedInput.Value.Unknown(match[1]));
     } else continue;
 
-    value = value.slice(match[0].length);
-  }
+    value = value.slice(match[0].length).trim();
+  } while (value.length > 0);
 
   return current.args.map((arg) => {
-    if (typeof arg !== "string") arg.parent = undefined;
+    if (arg.type === ParsedInput.Type.UserDefined.Constructor)
+      arg.parent = undefined;
     return arg;
   });
+}
+
+export function getTypeFromValue(
+  value: ParsedInput.Value.Intermediate
+): ParsedInput.Type.All {
+  if (value instanceof ParsedInput.Value.Constructor) {
+    if (value.name === "Cons" || value.name === "LCons")
+      return ParsedInput.Type.Kind.LinkedList;
+
+    if (value.name === "Node") return ParsedInput.Type.Kind.Tree;
+
+    return ParsedInput.Type.Unknown.Unknown;
+  }
+
+  if (
+    value.raw.startsWith("Nil") ||
+    value.raw.startsWith("Cons") ||
+    value.raw.startsWith("LNil") ||
+    value.raw.startsWith("LCons")
+  )
+    return ParsedInput.Type.Kind.LinkedList;
+
+  if (value.raw.startsWith("Leaf") || value.raw.startsWith("Node"))
+    return ParsedInput.Type.Kind.Tree;
+
+  return ParsedInput.Type.Unknown.Unknown;
+}
+
+export function parseValue(
+  value: string | ParsedInput.Value.Intermediate
+): ParsedInput.Value.Any {
+  const recur = (
+    cons: ParsedInput.Value.Intermediate
+  ): ParsedInput.Value.Any => {
+    let match: RegExpExecArray | null;
+
+    if (cons.type === ParsedInput.Type.Unknown.Unknown) {
+      // tree leaf
+      if (cons.raw === "Leaf") return new ParsedInput.Value.Tree.Leaf();
+      // linked list end
+      if ((match = /^(\w?)Nil$/.exec(cons.raw)))
+        return new ParsedInput.Value.LinkedList(match[1] + "Cons");
+
+      return cons;
+    }
+
+    /**
+     * @todo 각 Kind class (Tree, Linked list)마다 가지는
+     * Constructor name을 매칭시키는 코드 추가
+     * @example ParsedInput.Value.Tree.isNode(cons)
+     */
+    // tree node
+    if (cons.name == "Node") {
+      // cons is Constructor
+      const children: ParsedInput.Value.Tree[] = [];
+      let treeValue: ParsedInput.Value.Any | null = null;
+      for (const arg of cons.args) {
+        const result = recur(arg);
+        if (result instanceof ParsedInput.Value.Tree) children.push(result);
+        else treeValue = result;
+      }
+
+      if (!treeValue)
+        throw new Error(
+          `Cannot parse value ${cons.raw}: Cannot find node value in given input`
+        );
+      return new ParsedInput.Value.Tree.Node(treeValue, children);
+    }
+
+    // linked list
+    if ((match = /^(\w?)Cons$/.exec(cons.name))) {
+      const list = new ParsedInput.Value.LinkedList(cons.name);
+
+      const [item, rest] = cons.args;
+      if (item instanceof ParsedInput.Value.Constructor) {
+        list.elements.push(recur(item));
+      } else list.elements.push(item);
+
+      const restParsed = recur(rest);
+      if (restParsed.type === ParsedInput.Type.Kind.LinkedList)
+        list.connect(restParsed);
+      else list.elements.push(restParsed);
+
+      return list;
+    }
+
+    return recur(cons);
+  };
+
+  return recur(typeof value === "string" ? parseConstructor(value)[0] : value);
 }
 
 function sanitizeComment(input: string) {
@@ -201,7 +344,9 @@ function sanitizeComment(input: string) {
   return result;
 }
 
-/** TODO: Exclude comments */
+/**
+ * @todo use parseValue in this step
+ */
 export function parseInput(input: string) {
   input = sanitizeComment(input);
   const splitted = input.split(/^synth/gm);
@@ -261,134 +406,12 @@ export function parseInput(input: string) {
   } satisfies ParsedInput;
 }
 
-export function parseExampleType(example: ParsedInput.Example): {
-  args: ParsedInput.Type.All[];
-  result: ParsedInput.Type.All;
-} {
-  for (const arg of example.args) {
-    getTypeFromValue(arg);
-  }
-
-  return {
-    args: example.args.map(getTypeFromValue),
-    result: getTypeFromValue(example.result),
-  };
-}
-
-export function getTypeFromValue(value: string): ParsedInput.Type.All;
-export function getTypeFromValue(
-  value: ParsedInput.Value.Constructor
-): ParsedInput.Type.All;
-export function getTypeFromValue(
-  value: ParsedInput.Value.Intermediate
-): ParsedInput.Type.All;
-export function getTypeFromValue(
-  value: ParsedInput.Value.Intermediate
-): ParsedInput.Type.All {
-  if (value instanceof ParsedInput.Value.Constructor) {
-    if (value.name === "Cons" || value.name === "LCons")
-      return ParsedInput.Type.Kind.LinkedList;
-
-    if (value.name === "Node") return ParsedInput.Type.Kind.Tree;
-
-    return ParsedInput.Type.Unknown.Unknown;
-  }
-
-  if (
-    value.startsWith("Nil") ||
-    value.startsWith("Cons") ||
-    value.startsWith("LNil") ||
-    value.startsWith("LCons")
-  )
-    return ParsedInput.Type.Kind.LinkedList;
-
-  if (value.startsWith("Leaf") || value.startsWith("Node"))
-    return ParsedInput.Type.Kind.Tree;
-
-  return ParsedInput.Type.Unknown.Unknown;
-}
-
-export function parseValue(value: string): ParsedInput.Value;
-export function parseValue(
-  value: ParsedInput.Value.Constructor
-): ParsedInput.Value;
-export function parseValue(
-  value: ParsedInput.Value.Intermediate
-): ParsedInput.Value;
-export function parseValue(
-  value: ParsedInput.Value.Intermediate
-): ParsedInput.Value {
-  const valueType = getTypeFromValue(value);
-  let parsedValue: ParsedInput.Value.Any | null = null;
-
-  if (valueType === ParsedInput.Type.Kind.LinkedList)
-    parsedValue = parseLinkedListValue(value);
-  else if (valueType === ParsedInput.Type.Kind.Tree)
-    parsedValue = parseTreeValue(value);
-  // Unknown
-  else parsedValue = typeof value === "string" ? value : value.raw;
-
-  return { type: valueType, value: parsedValue } as ParsedInput.Value;
-}
-
-export function parseLinkedListValue(
-  value: string
-): ParsedInput.Value.LinkedList;
-export function parseLinkedListValue(
-  value: ParsedInput.Value.Constructor
-): ParsedInput.Value.LinkedList;
-export function parseLinkedListValue(
-  value: ParsedInput.Value.Intermediate
-): ParsedInput.Value.LinkedList;
-/**
- * @todo parseLinkedListValue 자체를 recursive하게 수정할 수 있을듯
- */
-export function parseLinkedListValue(
-  value: ParsedInput.Value.Intermediate
-): ParsedInput.Value.LinkedList {
-  const recur = (
-    cons: ParsedInput.Value.Intermediate,
-    arr: ParsedInput.Value.LinkedList = []
-  ): ParsedInput.Value.LinkedList => {
-    console.log("recur", cons, typeof cons);
-    if (typeof cons === "string") {
-      if (!/^\w?Nil/.test(cons)) arr.push(cons);
-      return arr;
-    }
-
-    const [item, rest] = cons.args;
-    if (item instanceof ParsedInput.Value.Constructor) {
-      arr.push(recur(item, []));
-    } else arr.push(item);
-
-    return recur(rest, arr);
-  };
-
-  return recur(typeof value === "string" ? parseConstructor(value)[0] : value);
-}
-
-// TODO: Implement tree data parser
-export function parseTreeValue(value: string): ParsedInput.Value.Tree;
-export function parseTreeValue(
-  value: ParsedInput.Value.Constructor
-): ParsedInput.Value.Tree;
-export function parseTreeValue(
-  value: ParsedInput.Value.Intermediate
-): ParsedInput.Value.Tree;
-export function parseTreeValue(
-  value: ParsedInput.Value.Intermediate
-): ParsedInput.Value.Tree {
-  value.toString();
-  return {
-    isLeaf: true,
-    children: [],
-  } as ParsedInput.Value.Tree;
-}
-
 // const input =
 //   "type bool =\n  | False\n  | True\n\nsynth bool -> bool -> bool satisfying\n\n[True,True] -> True,\n[True,False] -> False,\n[False,True] -> False,\n(*[False,False] -> False*)\n";
 // console.log(input);
 // console.log(sanitizeComment(input));
+
+// console.log(parseConstructor(""));
 
 // const ex =
 //   "type nat =\n  | O\n  | S of nat\n\ntype list =\n  | Nil\n  | Cons of nat * list\n\ntype cmp =\n  | LT\n  | EQ\n  | GT\n\nlet compare =\n  fix (compare : nat -> nat -> cmp) =\n    fun (x1 : nat) ->\n      fun (x2 : nat) ->\n        match x1 with\n        | O -> (match x2 with\n                | O -> EQ\n                | S _ -> LT)\n        | S x1 -> (match x2 with\n                | O -> GT\n                | S x2 -> compare x1 x2)\n;;\n\nsynth list -> nat -> list satisfying\n\n[Nil,0] -> Cons(0,Nil),\n[Cons(1,Nil),1] -> Cons(1,Nil),\n[Cons(1,Nil),2] -> Cons(1,Cons(2,Nil)),\n[Cons(2,Nil),0] -> Cons(0,Cons(2,Nil)),\n[Cons(2,Nil),1] -> Cons(1,Cons(2,Nil)),\n[Cons(0,Cons(1,Nil)),0] -> Cons(0,Cons(1,Nil)),\n[Cons(0,Cons(1,Nil)),2] -> Cons(0,Cons(1,Cons(2,Nil))),\n";
@@ -396,8 +419,24 @@ export function parseTreeValue(
 // console.log(parsed);
 // console.log(parsed.examples[1]);
 
-// console.log(parseLinkedListValue("Nil"));
-// console.log(parseLinkedListValue("Cons(0,Cons(1,Nil))"));
+// console.log(parseValue(parseConstructor("Nil")[0]));
+// console.log(parseValue(parseConstructor("Cons(0,Cons(1,Nil))")[0]));
+// console.log(
+//   parseValue(parseConstructor("Cons(1,Cons(2,Cons(2,Cons(2,Cons(0,Nil)))))")[0])
+// );
 
-// console.log(parseLinkedListValue("Node (Node (Leaf, 0, Leaf), 1, Leaf)"));
-// console.log(parseLinkedListValue("Node(Node(Leaf,0,Leaf),1,Leaf)"));
+// console.log(parseValue(parseConstructor("Leaf")[0]));
+// console.log(
+//   parseValue(parseConstructor("Node (Node (Leaf, 0, Leaf), 1, Leaf)")[0])
+// );
+// console.log(
+//   parseValue(parseConstructor("Node(Node(Leaf,0,Leaf),1,Leaf)")[0])
+// );
+// console.log(
+//   parseValue(
+//     parseConstructor("Node(Node(Leaf,1,Leaf),2,Node(Leaf,0,Leaf))")[0]
+//   )
+// );
+// console.log(
+//   parseValue(parseConstructor("Node(1,Node(0,Leaf,Leaf),Leaf)")[0])
+// );

@@ -5,5 +5,5 @@ export interface UnknownValueProps {
 }
 
 export function UnknownValue({ value }: UnknownValueProps) {
-  return <div>{typeof value === "string" ? value : value.raw}</div>;
+  return <div>{value.raw}</div>;
 }

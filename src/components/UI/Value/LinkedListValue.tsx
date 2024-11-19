@@ -8,9 +8,9 @@ export function LinkedListValue({ value }: LinkedListValueProps) {
   return (
     <div className="flex text-2xl gap-2">
       <span>{"["}</span>
-      {value
+      {value.elements
         .flatMap((v, index) => [
-          <span key={`${index}_${v}`}>{v as unknown as string}</span>,
+          <span key={`${index}_${v}`}>{v.raw}</span>,
           <Divider key={"divider_" + index} />,
         ])
         .slice(0, -1)}
