@@ -5,5 +5,5 @@ export interface UnknownValueProps {
 }
 
 export function UnknownValue({ value }: UnknownValueProps) {
-  return <div>{value.raw}</div>;
+  return <div className="text-2xl">{value.raw}</div>;
 }
