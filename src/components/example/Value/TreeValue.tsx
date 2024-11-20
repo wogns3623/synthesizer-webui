@@ -44,7 +44,7 @@ export function TreeValue({ value }: TreeValueProps) {
           {name}
         </PopoverTrigger>
         <PopoverContent
-          className="h-72 p-0 shadow-lg ml-4"
+          className="h-72 p-0 shadow-lg m-4"
           style={{ width: popoverWidth - 32 }}
           side="bottom"
           align="end"
