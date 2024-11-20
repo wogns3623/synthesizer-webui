@@ -1,3 +1,5 @@
+import { Class } from "./types";
+
 export namespace ParsedInput {
   // export interface Function {
   //   name: string;
@@ -119,38 +121,93 @@ export namespace ParsedInput {
       }
     }
 
-    export abstract class Tree extends Value {
+    class _Tree extends Value {
       readonly type = Type.Kind.Tree;
-      readonly isLeaf: boolean = true;
-      parent?: Tree.Node;
+      parent?: Node;
+      readonly isLeaf: boolean;
+      readonly value?: Any;
+      readonly children?: Tree[] = [];
 
-      get raw() {
-        return "";
+      private constructor(isLeaf: true);
+      private constructor(isLeaf: false, value: Any, children?: Tree[]);
+      private constructor(isLeaf: boolean, value?: Any, children: Tree[] = []) {
+        super();
+        this.isLeaf = isLeaf;
+        this.value = value;
+        children.forEach((child) => (this as Node).addChild(child));
+      }
+
+      addChild<TThis extends Node = Node>(this: TThis, child: Tree) {
+        this.children.push(child);
+        child.parent = this;
+      }
+
+      get raw(): string {
+        if (this.isLeaf) return "Leaf";
+
+        const args = [(this as Node).value.raw];
+        (this as Node).children.forEach((child) => args.push(child.raw));
+        return `Node(${args.join(",")})`;
+      }
+
+      get name(): string {
+        return this.isLeaf ? "Leaf" : (this as Node).value.raw;
+      }
+
+      static createLeaf() {
+        return new Tree(true) as Leaf;
+      }
+
+      static createNode(value: Any, children: Tree[] = []) {
+        return new Tree(false, value, children);
+      }
+
+      static isLeaf(value: Tree): value is Leaf {
+        return value.isLeaf;
+      }
+
+      static isNode(value: Tree): value is Node {
+        return !value.isLeaf;
       }
     }
 
-    export namespace Tree {
-      export class Leaf extends Tree {
-        readonly isLeaf = true;
-      }
-
-      export class Node extends Tree {
-        readonly isLeaf = false;
-        readonly value: Any;
-        readonly children: Tree[] = [];
-
-        constructor(value: Any, children: Tree[] = []) {
-          super();
-          this.value = value;
-          children.forEach((v) => this.addChild(v));
-        }
-
-        addChild(child: Tree) {
-          this.children.push(child);
-          child.parent = this;
-        }
-      }
+    interface Leaf extends _Tree {
+      readonly isLeaf: true;
+      readonly value?: never;
+      readonly children?: never;
     }
+
+    interface Node extends _Tree {
+      readonly isLeaf: false;
+      readonly value: Any;
+      readonly children: Tree[];
+    }
+
+    export type Tree = Leaf | Node;
+    export const Tree = _Tree as Class<Tree, typeof _Tree>;
+
+    // export namespace Tree {
+    //   export class Leaf extends Tree {
+    //     readonly _isLeaf = true;
+    //   }
+
+    //   export class Node extends Tree {
+    //     readonly _isLeaf = false;
+    //     readonly value: Any;
+    //     readonly children: Tree[] = [];
+
+    //     constructor(value: Any, children: Tree[] = []) {
+    //       super();
+    //       this.value = value;
+    //       children.forEach((v) => this.addChild(v));
+    //     }
+
+    //     addChild(child: Tree) {
+    //       this.children.push(child);
+    //       child.parent = this;
+    //     }
+    //   }
+    // }
 
     export type Intermediate = Unknown | Constructor;
     export type Any = Intermediate | LinkedList | Tree;
@@ -250,7 +307,7 @@ export function parseValue(
 
     if (cons.type === ParsedInput.Type.Unknown.Unknown) {
       // tree leaf
-      if (cons.raw === "Leaf") return new ParsedInput.Value.Tree.Leaf();
+      if (cons.raw === "Leaf") return ParsedInput.Value.Tree.createLeaf();
       // linked list end
       if ((match = /^(\w?)Nil$/.exec(cons.raw)))
         return new ParsedInput.Value.LinkedList(match[1] + "Cons");
@@ -278,7 +335,7 @@ export function parseValue(
         throw new Error(
           `Cannot parse value ${cons.raw}: Cannot find node value in given input`
         );
-      return new ParsedInput.Value.Tree.Node(treeValue, children);
+      return ParsedInput.Value.Tree.createNode(treeValue, children);
     }
 
     // linked list

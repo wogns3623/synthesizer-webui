@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { examples } from "@/constants/data";
 import { Editor } from "@/components/Editor";
 import { CodeView } from "@/components/CodeView";
-import { UIView } from "@/components/UI/UIView";
+import { UIView } from "@/components/example/ExampleView";
 import { useSearchParams } from "next/navigation";
 
 const testInput = `type nat =
