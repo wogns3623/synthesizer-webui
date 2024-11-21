@@ -2,9 +2,12 @@
   "extends": ["next/core-web-vitals", "next/typescript"],
   "plugins": ["@wogns3623/better-exhaustive-deps"],
   "rules": {
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-unsafe-function-type": "off",
+    "@typescript-eslint/no-namespace": "off",
     // disable original rule
     "react-hooks/exhaustive-deps": "off",
-    "@typescript-eslint/no-namespace": "off",
     "@wogns3623/better-exhaustive-deps/exhaustive-deps": [
       "warn",
       {
