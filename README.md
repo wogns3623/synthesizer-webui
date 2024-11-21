@@ -45,7 +45,5 @@ npm run dev
 
 ## TODO
 
-- Add loading ui for pending synthesizer response
-- Add ui view for each input section
-- Add some prepared funtion, select&add ui
-- code view일때는 파싱하지 않고 ui view로 전환할 때만 파싱
+- 최상단 header 추가
+- 합성 결과물 하단에 Ocaml form output 추가
