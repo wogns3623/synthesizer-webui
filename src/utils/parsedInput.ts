@@ -90,7 +90,7 @@ export namespace ParsedInput {
 
       get raw(): string {
         return `${this.name}(${this.args.map((arg) =>
-          arg instanceof Constructor ? arg.raw : arg.raw
+          arg instanceof Constructor ? arg.raw : arg.raw,
         )})`;
       }
     }
@@ -116,7 +116,7 @@ export namespace ParsedInput {
       private rawRecursive(index = 0): string {
         if (this.elements.length === index) return "Nil";
         return `Cons(${this.elements[index].raw},${this.rawRecursive(
-          index + 1
+          index + 1,
         )})`;
       }
     }
@@ -272,7 +272,7 @@ function parseConstructor(value: string): ParsedInput.Value.Intermediate[] {
 }
 
 export function getTypeFromValue(
-  value: ParsedInput.Value.Intermediate
+  value: ParsedInput.Value.Intermediate,
 ): ParsedInput.Type.All {
   if (value instanceof ParsedInput.Value.Constructor) {
     if (value.name === "Cons" || value.name === "LCons")
@@ -298,10 +298,10 @@ export function getTypeFromValue(
 }
 
 export function parseValue(
-  value: string | ParsedInput.Value.Intermediate
+  value: string | ParsedInput.Value.Intermediate,
 ): ParsedInput.Value.Any {
   const recur = (
-    cons: ParsedInput.Value.Intermediate
+    cons: ParsedInput.Value.Intermediate,
   ): ParsedInput.Value.Any => {
     let match: RegExpExecArray | null;
 
@@ -333,7 +333,7 @@ export function parseValue(
 
       if (!treeValue)
         throw new Error(
-          `Cannot parse value ${cons.raw}: Cannot find node value in given input`
+          `Cannot parse value ${cons.raw}: Cannot find node value in given input`,
         );
       return ParsedInput.Value.Tree.createNode(treeValue, children);
     }
@@ -412,7 +412,7 @@ export function parseInput(input: string) {
 
   const types: string[] = [];
   const matchResult = defs.match(
-    /type\s*\w*\s*=(:?\s*[\w "]*)?(:?\s*\|\s*[\w "*]*)*/g
+    /type\s*\w*\s*=(:?\s*[\w "]*)?(:?\s*\|\s*[\w "*]*)*/g,
   );
   if (matchResult) {
     matchResult.forEach((r) => {

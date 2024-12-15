@@ -11,7 +11,7 @@ export type AsyncDispatch<T> = (value: T) => Promise<void>;
 export function useSetter<T>(
   value: T,
   callback: Dispatch<T> | AsyncDispatch<T>,
-  deps: DependencyList = []
+  deps: DependencyList = [],
 ) {
   const valueRef = useRef<T>(value);
 

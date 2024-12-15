@@ -26,12 +26,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} flex min-h-screen flex-col antialiased`}
       >
-        {/* <header className="flex items-center justify-between h-20 bg-slate-700 px-8">
-          <div>header</div>
+        <header className="flex h-12 items-center justify-between bg-neutral-700 px-8 text-white">
+          <div className="text-3xl">header</div>
           <button>toggle theme</button>
-        </header> */}
+        </header>
         <main>{children}</main>
         {/* <footer className="">footer</footer>   */}
       </body>

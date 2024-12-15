@@ -38,13 +38,13 @@ export async function POST(request: NextRequest) {
             "\nSynthesize stdout: ",
             stdout,
             "\nSynthesize stderr: ",
-            stderr
+            stderr,
           );
           if (err) {
             if (err.killed) return res("(* Yet. *)");
             else return res("(* Check your input format. *)");
           } else return res(stderr);
-        }
+        },
       );
     });
 

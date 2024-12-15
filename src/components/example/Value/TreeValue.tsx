@@ -40,11 +40,11 @@ export function TreeValue({ value }: TreeValueProps) {
       ref={containerRef}
     >
       <Popover>
-        <PopoverTrigger className="inline-block bg-neutral-700 text-white rounded-lg  px-4 py-2 border border-solid border-neutral-600 hover:bg-neutral-600 hover:border-neutral-500">
+        <PopoverTrigger className="inline-block rounded-lg border border-solid border-neutral-600 bg-neutral-700 px-4 py-2 text-white hover:border-neutral-500 hover:bg-neutral-600">
           {name}
         </PopoverTrigger>
         <PopoverContent
-          className="h-72 p-0 shadow-lg m-4"
+          className="m-4 h-72 p-0 shadow-lg"
           style={{ width: popoverWidth - 32 }}
           side="bottom"
           align="end"

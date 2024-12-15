@@ -6,7 +6,7 @@ export interface LinkedListValueProps {
 
 export function LinkedListValue({ value }: LinkedListValueProps) {
   return (
-    <div className="flex text-2xl gap-2">
+    <div className="flex gap-2 text-2xl">
       <span>{"["}</span>
       {value.elements
         .flatMap((v, index) => [

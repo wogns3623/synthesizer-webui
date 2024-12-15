@@ -47,3 +47,4 @@ npm run dev
 
 - 최상단 header 추가
 - 합성 결과물 하단에 Ocaml form output 추가
+  - trio option이 있다고 함

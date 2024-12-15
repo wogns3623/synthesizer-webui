@@ -12,7 +12,7 @@ export interface UIViewProps {
 export function UIView({ input, className }: UIViewProps) {
   const { types, signature, examples } = useMemo(
     () => parseInput(input),
-    [input]
+    [input],
   );
   const [tabIndex, setTabIndex] = useState(0);
   if (examples.length <= tabIndex) setTabIndex(0);
@@ -20,7 +20,7 @@ export function UIView({ input, className }: UIViewProps) {
   const example = examples[tabIndex];
   return (
     <section
-      className={`flex-1 flex flex-col bg-neutral-800 text-white ${
+      className={`flex flex-1 flex-col bg-neutral-800 text-white ${
         className ?? ""
       }`}
     >
@@ -31,11 +31,11 @@ export function UIView({ input, className }: UIViewProps) {
         className="flex-1"
       />
 
-      <footer className="flex-grow-0 flex h-8 bg-opacity-60 bg-neutral-700 px-4 overflow-auto scrollbar-none">
+      <footer className="flex h-8 flex-grow-0 overflow-auto bg-neutral-700 bg-opacity-60 px-4 scrollbar-none">
         {examples.map((_, index) => (
           <div
-            className={`flex-none px-2 py-1 flex justify-center items-center cursor-pointer hover:bg-neutral-600 ${
-              tabIndex === index ? " bg-neutral-600" : ""
+            className={`flex flex-none cursor-pointer items-center justify-center px-2 py-1 hover:bg-neutral-600 ${
+              tabIndex === index ? "bg-neutral-600" : ""
             }`}
             onClick={() => setTabIndex(index)}
             key={index}
