@@ -4,7 +4,8 @@ import { exec } from "child_process";
 import { WritableStream } from "stream/web";
 
 export type SynthesizeResponseData = {
-  message: string;
+  raw: string;
+  ocaml: string;
 };
 
 export type SynthesizeRequestData = string;
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
       );
     });
 
-    return new NextResponse(result);
+    return NextResponse.json({ raw: result, ocaml: result });
   } catch (e) {
     return NextResponse.error();
   }

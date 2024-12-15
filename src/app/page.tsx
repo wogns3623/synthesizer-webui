@@ -6,6 +6,12 @@ import { Editor } from "@/components/Editor";
 import { CodeView } from "@/components/CodeView";
 import { UIView } from "@/components/example/ExampleView";
 import { useSearchParams } from "next/navigation";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { SynthesizeResponseData } from "./api/synthesize/route";
 
 const testInput = `type nat =
 | O
@@ -67,27 +73,32 @@ export default function Home() {
 
   const [showExampleUI, setShowExampleUI] = useState(false);
   const [input, setInput] = useState(searchParams.get("input") ?? testInput);
-  const [output, setOutput] = useState(
-    searchParams.get("input") ? "" : testOutput
+  const [output, setOutput] = useState<SynthesizeResponseData>(
+    searchParams.get("input")
+      ? { raw: "", ocaml: "" }
+      : { raw: testOutput, ocaml: testOutput },
   );
 
   const synthesizeCode = useCallback(async (input: string) => {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_PATH}/synthesize`,
-      { method: "POST", body: input }
+      { method: "POST", body: input },
     );
 
-    const output = (await response.text()) as string;
+    const output = (await response.json()) as SynthesizeResponseData;
     setOutput(output);
   }, []);
 
   return (
-    <div className="min-h-screen flex">
-      {/* input */}
-      <section className="w-[calc(50%-0.5rem)] flex flex-col relative">
-        <header className="flex h-12 bg-neutral-700 px-4 text-white">
+    <div className="min-h-screen">
+      <header className="flex h-12 justify-between bg-neutral-700 px-4 text-white">
+        <section className="flex gap-4">
+          <div className="flex items-center">
+            <h1 className="text-3xl font-semibold">Trio</h1>
+          </div>
+
           <select
-            className="px-2 bg-neutral-700 hover:bg-neutral-600"
+            className="bg-neutral-700 px-2 hover:bg-neutral-600"
             onChange={(e) => setInput(e.currentTarget.value)}
           >
             <option defaultChecked>select examples</option>
@@ -104,67 +115,84 @@ export default function Home() {
           >
             {`${showExampleUI ? "hide" : "show"} example ui`}
           </button>
-
           <button
             className="px-4 hover:bg-neutral-600"
             onClick={() => synthesizeCode(input)}
           >
             synthesize
           </button>
-        </header>
 
-        <section className="flex-1 flex flex-col">
-          <div className="flex-1">
-            <CodeView input={input} setInput={setInput} className="z-[1]" />
-          </div>
-
-          <div
-            className={`transition-all basis-0 flex-shrink overflow-hidden z-[2] shadow-[#26262680_0px_-10px_10px_0px] ${
-              showExampleUI ? "flex-grow" : "flex-grow-0"
-            }`}
-          >
-            <UIView input={input} setInput={setInput} className="h-full" />
-          </div>
-        </section>
-      </section>
-
-      {/* TODO: Add drag feature to adjust section size */}
-      <div className="flex flex-col w-4 z-[3]">
-        <header className="h-12 bg-neutral-700" />
-        <div className="flex-1 flex flex-col justify-center items-center bg-neutral-800">
-          <button className="*:h-1">
-            <div>.</div>
-            <div>.</div>
-            <div>.</div>
-          </button>
-        </div>
-      </div>
-
-      {/* output */}
-      <section className="w-[calc(50%-0.5rem)] flex flex-col">
-        <header className="flex h-12 bg-neutral-700 pr-4 text-white">
           <button
             className="px-4 hover:bg-neutral-600"
             onClick={() => {
               navigator.clipboard.writeText(
-                "http://localhost:3000/?input=" + encodeURIComponent(input)
+                "http://localhost:3000/?input=" + encodeURIComponent(input),
               );
             }}
           >
             share links
           </button>
-        </header>
+        </section>
 
-        <Editor
-          mode="ocaml"
-          className="flex-1"
-          theme="github_dark"
-          width="auto"
-          height="auto"
-          readOnly
-          defaultValue={output}
-          value={output}
-        />
+        <section className="flex">
+          <button className="px-4 hover:bg-neutral-600">about</button>
+        </section>
+      </header>
+
+      <section className="h-[calc(100vh-3rem)]">
+        <ResizablePanelGroup direction="horizontal">
+          {/* input */}
+          <ResizablePanel defaultSize={50}>
+            <section className="relative flex h-full w-full flex-col">
+              <div className="flex-1">
+                <CodeView input={input} setInput={setInput} className="z-[1]" />
+              </div>
+
+              <div
+                className={`z-[2] flex-shrink basis-0 overflow-hidden shadow-[#26262680_0px_-10px_10px_0px] transition-all ${
+                  showExampleUI ? "flex-grow" : "flex-grow-0"
+                }`}
+              >
+                <UIView input={input} setInput={setInput} className="h-full" />
+              </div>
+            </section>
+          </ResizablePanel>
+
+          {/* TODO: Add drag feature to adjust section size */}
+          <ResizableHandle withHandle className="border-neutral-700" />
+
+          {/* output */}
+          <ResizablePanel
+            defaultSize={50}
+            className="flex w-[calc(50%-0.5rem)] flex-col"
+          >
+            <ResizablePanelGroup direction="vertical">
+              <ResizablePanel defaultSize={25} className="h-full w-full">
+                <Editor
+                  mode="ocaml"
+                  theme="github_dark"
+                  width="100%"
+                  height="100%"
+                  readOnly
+                  defaultValue={output.raw}
+                  value={output.raw}
+                />
+              </ResizablePanel>
+              <ResizableHandle withHandle className="border-neutral-700" />
+              <ResizablePanel defaultSize={25} className="h-full w-full">
+                <Editor
+                  mode="ocaml"
+                  theme="github_dark"
+                  width="100%"
+                  height="100%"
+                  readOnly
+                  defaultValue={output.ocaml}
+                  value={output.ocaml}
+                />
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </section>
     </div>
   );

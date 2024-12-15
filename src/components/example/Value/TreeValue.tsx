@@ -7,6 +7,7 @@ import {
 
 import { ParsedInput } from "@/utils/parsedInput";
 import { useLayoutEffect, useRef, useState } from "react";
+import throttle from "lodash.throttle";
 
 export interface TreeValueProps {
   value: ParsedInput.Value.Tree;
@@ -24,12 +25,25 @@ export function TreeValue({ value }: TreeValueProps) {
     const parent = containerRef.current.parentElement;
     if (!parent) return;
 
-    setPopoverWidth(parent.clientWidth);
-    const resizeHandler = () => setPopoverWidth(parent.clientWidth);
+    const observer = new ResizeObserver(
+      throttle<ResizeObserverCallback>((entries, observer) => {
+        const [entry] = entries;
+        console.log("resize", entry.contentBoxSize, entry);
 
-    parent.addEventListener("resize", resizeHandler);
-    return () => parent.removeEventListener("resize", resizeHandler);
-  }, []);
+        setPopoverWidth(entry.borderBoxSize[0].inlineSize);
+      }, 50),
+    );
+
+    observer.observe(parent);
+    return () => observer.disconnect();
+
+    // const resizeHandler = () => {
+    //   console.log("resize", parent.clientWidth, parent);
+    //   setPopoverWidth(parent.clientWidth);
+    // };
+    // parent.addEventListener("resize", resizeHandler);
+    // return () => parent.removeEventListener("resize", resizeHandler);
+  });
 
   return (
     <div
@@ -44,7 +58,7 @@ export function TreeValue({ value }: TreeValueProps) {
           {name}
         </PopoverTrigger>
         <PopoverContent
-          className="m-4 h-72 p-0 shadow-lg"
+          className="m-4 h-72 bg-white p-0 shadow-lg"
           style={{ width: popoverWidth - 32 }}
           side="bottom"
           align="end"
