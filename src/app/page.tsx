@@ -155,19 +155,23 @@ export default function Home() {
       <section className="h-[calc(100vh-3rem)]">
         <ResizablePanelGroup direction="horizontal">
           {/* input */}
-          <ResizablePanel defaultSize={50}>
+          <ResizablePanel>
             <section className="relative flex h-full w-full flex-col">
               <div className="flex-1">
                 <CodeView input={input} setInput={setInput} className="z-[1]" />
               </div>
 
-              <div
-                className={`z-[2] flex-shrink basis-0 overflow-hidden shadow-[#26262680_0px_-10px_10px_0px] transition-all ${
-                  showExampleUI ? "flex-grow" : "flex-grow-0"
-                }`}
-              >
-                <UIView input={input} setInput={setInput} className="h-full" />
-              </div>
+              {showExampleUI && (
+                <div
+                  className={`z-[2] flex-1 overflow-hidden shadow-[#26262680_0px_-10px_10px_0px]`}
+                >
+                  <UIView
+                    input={input}
+                    setInput={setInput}
+                    className="h-full"
+                  />
+                </div>
+              )}
             </section>
           </ResizablePanel>
 
@@ -175,12 +179,9 @@ export default function Home() {
           <ResizableHandle className="border-neutral-700" />
 
           {/* output */}
-          <ResizablePanel
-            defaultSize={50}
-            className="flex w-[calc(50%-0.5rem)] flex-col"
-          >
+          <ResizablePanel className="flex w-[calc(50%-0.5rem)] flex-col">
             <ResizablePanelGroup direction="vertical">
-              <ResizablePanel defaultSize={25} className="h-full w-full">
+              <ResizablePanel className="h-full w-full">
                 <Editor
                   mode="ocaml"
                   theme="github_dark"
@@ -194,7 +195,7 @@ export default function Home() {
 
               <ResizableHandle className="border-neutral-700" />
 
-              <ResizablePanel defaultSize={25} className="h-full w-full">
+              <ResizablePanel className="h-full w-full">
                 <Editor
                   mode="ocaml"
                   theme="github_dark"

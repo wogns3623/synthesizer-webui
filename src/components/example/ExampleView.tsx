@@ -15,21 +15,26 @@ export function UIView({ input, className }: UIViewProps) {
     [input],
   );
   const [tabIndex, setTabIndex] = useState(0);
-  if (examples.length <= tabIndex) setTabIndex(0);
+  if (examples.length > 0 && examples.length <= tabIndex) setTabIndex(0);
 
   const example = examples[tabIndex];
+
   return (
     <section
       className={`flex flex-1 flex-col bg-neutral-800 text-white ${
         className ?? ""
       }`}
     >
-      <ExampleElement
-        types={types}
-        signature={signature}
-        example={example}
-        className="flex-1"
-      />
+      <div className="flex-1">
+        {example && (
+          <ExampleElement
+            types={types}
+            signature={signature}
+            example={example}
+            className="h-full w-full"
+          />
+        )}
+      </div>
 
       <footer className="flex h-8 flex-grow-0 overflow-auto bg-neutral-700 bg-opacity-60 px-4 scrollbar-none">
         {examples.map((_, index) => (

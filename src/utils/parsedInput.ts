@@ -1,11 +1,11 @@
 import { Class } from "./types";
 
 export namespace ParsedInput {
-  // export interface Function {
-  //   name: string;
-  //   code: string;
-  // }
-  export type Function = string;
+  export interface Function {
+    name: string;
+    code: string;
+  }
+  // export type Function = string;
 
   // export interface Signature {
   //   args: string[];
@@ -239,7 +239,7 @@ export interface ParsedInput {
   /**
    * @deprecated Not implemented yet
    */
-  readonly signature: ParsedInput.Signature | undefined;
+  readonly signature: ParsedInput.Signature | null;
   readonly examples: ParsedInput.Example[];
 }
 
@@ -400,67 +400,126 @@ function sanitizeComment(input: string) {
   return result;
 }
 
+// export function parseInput(input: string) {
+//   input = sanitizeComment(input);
+//   const splitted = input.split(/^synth/gm);
+//   let defs = splitted[0];
+//   const signatures = splitted[1];
+
+//   const rawTypes: string[] = [];
+//   const matchResult = defs.match(
+//     /type\s*\w*\s*=(:?\s*[\w "]*)?(:?\s*\|\s*[\w "*]*)*/g,
+//   );
+//   if (matchResult)
+//     matchResult.forEach((r) => {
+//       rawTypes.push(r);
+//       defs = defs.substring(defs.search(r) + r.length);
+//       defs.trim();
+//     });
+
+//   const types = rawTypes.map((rawType) => {
+//     const [name, rest] = rawType.split("=").map((v) => v.trim());
+
+//     return {
+//       name: name.replace(/^type/m, "").trim(),
+//       type: "variants",
+//       variants: rest
+//         .split("|")
+//         .map((v) => v.trim())
+//         .filter((v) => v.length > 0),
+//     } satisfies ParsedInput.Type;
+//   });
+
+//   // TODO Split functions
+//   const functions = defs
+//     .split(";;")
+//     .map((v) => v.trim())
+//     .filter((v) => v.length > 0)
+//     .map((v) => v + "\n;;");
+
+//   const [rawSignature, ...rawExamples] = signatures.split("\n");
+
+//   // should use token base parser? -> Not yet
+//   // TODO: parse signature
+//   const signature = rawSignature;
+
+//   const examples = rawExamples
+//     .map((v) => v.trim())
+//     .filter((v) => v.length > 0)
+//     .flatMap((rawExample) => {
+//       const [input, output] = rawExample.split("->").map((e) => e.trim());
+//       // ignore partial text
+//       if (!input || !output) return [];
+
+//       return {
+//         args: parseConstructor(input.slice(1, -1)),
+//         result: parseConstructor(output)[0],
+//       };
+//     });
+
+//   return { types, functions, signature, examples } satisfies ParsedInput;
+// }
+
+// const typeRegex = /type\s+(\w+)\s*=((?:\s*\|[\w\s"*]*)*)?(?=type|let|synth)/;
+const typeRegex = /type\s+(\w+)\s*=([\w\s|"*]*)?(?=type|let|synth)/;
+const functionRegex = /let\s+(\w+)\s*=\s*([^;]+);;/;
+const signatureRegex = /synth\s+([^ ]+)(?:\s*->\s*([^ ]+))+\s*satisfying/;
+const exampleRegex = /\[([^\]]+)\]\s*->\s*([^,]+),?/;
+
 /**
  * @todo use parseValue in this step
  */
 export function parseInput(input: string) {
   input = sanitizeComment(input);
-  const splitted = input.split(/^synth/gm);
-  let defs = splitted[0];
-  const signatures = splitted[1];
 
-  const rawTypes: string[] = [];
-  const matchResult = defs.match(
-    /type\s*\w*\s*=(:?\s*[\w "]*)?(:?\s*\|\s*[\w "*]*)*/g,
-  );
-  if (matchResult)
-    matchResult.forEach((r) => {
-      rawTypes.push(r);
-      defs = defs.substring(defs.search(r) + r.length);
-      defs.trim();
+  // parse types
+  const types: ParsedInput.Type[] = [];
+
+  let match: RegExpExecArray | null;
+  while ((match = typeRegex.exec(input))) {
+    console.log(match);
+    const [, name, rest = ""] = match;
+    const variants = rest
+      .split("|")
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+    types.push({ name, type: "variants", variants });
+
+    input = input.slice(match.index + match[0].length);
+  }
+
+  // parse functions
+  const functions: ParsedInput.Function[] = [];
+
+  while ((match = functionRegex.exec(input))) {
+    const [, name, code] = match;
+    functions.push({ name, code });
+
+    input = input.slice(match.index + match[0].length);
+  }
+
+  // parse signature
+  match = signatureRegex.exec(input);
+  const signature = match ? match[0] : null;
+
+  if (match) {
+    input = input.slice(match.index + match[0].length);
+  }
+
+  // parse examples
+  const examples: ParsedInput.Example[] = [];
+
+  while ((match = exampleRegex.exec(input))) {
+    const [, args, result] = match;
+    examples.push({
+      args: parseConstructor(args),
+      result: parseConstructor(result)[0],
     });
 
-  const types = rawTypes.map((rawType) => {
-    const [name, rest] = rawType.split("=").map((v) => v.trim());
-
-    return {
-      name: name.replace(/^type/m, "").trim(),
-      type: "variants",
-      variants: rest
-        .split("|")
-        .map((v) => v.trim())
-        .filter((v) => v.length > 0),
-    } satisfies ParsedInput.Type;
-  });
-
-  // TODO Split functions
-  const functions = defs
-    .split(";;")
-    .map((v) => v.trim())
-    .filter((v) => v.length > 0)
-    .map((v) => v + "\n;;");
-
-  const [rawSignature, ...rawExamples] = signatures.split("\n");
-
-  // should use token base parser? -> Not yet
-  // TODO: parse signature
-  const signature = rawSignature;
-
-  const examples = rawExamples
-    .map((v) => v.trim())
-    .filter((v) => v.length > 0)
-    .flatMap((rawExample) => {
-      const [input, output] = rawExample.split("->").map((e) => e.trim());
-      // ignore partial text
-      if (!input || !output) return [];
-
-      return {
-        args: parseConstructor(input.slice(1, -1)),
-        result: parseConstructor(output)[0],
-      };
-    });
-
-  return { types, functions, signature, examples } satisfies ParsedInput;
+    input = input.slice(match.index + match[0].length);
+  }
+  console.log({ types, functions, signature, examples });
+  return { types, functions, signature, examples } as ParsedInput;
 }
 
 // const input =
@@ -470,8 +529,53 @@ export function parseInput(input: string) {
 
 // console.log(parseConstructor(""));
 
-// const ex =
-//   "type nat =\n  | O\n  | S of nat\n\ntype list =\n  | Nil\n  | Cons of nat * list\n\ntype cmp =\n  | LT\n  | EQ\n  | GT\n\nlet compare =\n  fix (compare : nat -> nat -> cmp) =\n    fun (x1 : nat) ->\n      fun (x2 : nat) ->\n        match x1 with\n        | O -> (match x2 with\n                | O -> EQ\n                | S _ -> LT)\n        | S x1 -> (match x2 with\n                | O -> GT\n                | S x2 -> compare x1 x2)\n;;\n\nsynth list -> nat -> list satisfying\n\n[Nil,0] -> Cons(0,Nil),\n[Cons(1,Nil),1] -> Cons(1,Nil),\n[Cons(1,Nil),2] -> Cons(1,Cons(2,Nil)),\n[Cons(2,Nil),0] -> Cons(0,Cons(2,Nil)),\n[Cons(2,Nil),1] -> Cons(1,Cons(2,Nil)),\n[Cons(0,Cons(1,Nil)),0] -> Cons(0,Cons(1,Nil)),\n[Cons(0,Cons(1,Nil)),2] -> Cons(0,Cons(1,Cons(2,Nil))),\n";
+// const ex = `type nat =
+//   | O
+//   | S of nat
+
+// type list =
+//   | Nil
+//   | Cons of nat * list
+
+// type bool =
+//   | True
+//   | False
+
+// let sum =
+//   fix (sum : nat -> nat -> nat) =
+//     fun (n1 : nat) ->
+//       fun (n2 : nat) ->
+//         match n1 with
+//         | O -> n2
+//         | S n1p -> S (sum n1p n2)
+// ;;
+
+// let is_odd =
+//   fix (is_odd : nat -> bool) =
+//     fun (x1 : nat) ->
+//       match x1 with
+//       | O -> False
+//       | S x1p ->
+//         (match x1p with
+//          | O -> True
+//          | S x1pp -> is_odd x1pp)
+// ;;
+
+// let count_odd =
+//   fun (n1:nat) ->
+//     fun (n2:nat) ->
+//       match is_odd n2 with
+//       | True -> S n1
+//       | False -> n1
+// ;;
+
+// synth (nat -> nat -> nat) -> nat -> list -> nat satisfying
+
+// [sum,0,Nil] -> 0,
+// [sum,0,Cons(2,Cons(1,Nil))] -> 3,
+// [sum,0,Cons(3,Cons(2,Cons(1,Nil)))] -> 6,
+// `;
+
 // const parsed = parseInput(ex);
 // console.log(parsed);
 // console.log(parsed.examples[1]);
