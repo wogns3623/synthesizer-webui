@@ -20,8 +20,8 @@ export namespace ParsedInput {
 
   export interface Type {
     name: string;
-    type: "varients";
-    varients: (Type | string)[];
+    type: "variants";
+    variants: (Type | string)[];
   }
 
   export namespace Type {
@@ -41,7 +41,7 @@ export namespace ParsedInput {
       Function = "function",
       Tuple = "tuple",
       Constructor = "constructor",
-      Varients = "varients",
+      Variants = "variants",
       Record = "record",
       Aliases = "aliases",
       Polymorphic = "polymorphic", // something like generic
@@ -239,7 +239,7 @@ export interface ParsedInput {
   /**
    * @deprecated Not implemented yet
    */
-  readonly signature: ParsedInput.Signature;
+  readonly signature: ParsedInput.Signature | undefined;
   readonly examples: ParsedInput.Example[];
 }
 
@@ -249,7 +249,6 @@ function parseConstructor(value: string): ParsedInput.Value.Intermediate[] {
 
   // find first Constructor symbol
   do {
-    // console.log(value);
     let match: RegExpExecArray | null = null;
     if ((match = /^\)(?:\s*,)?/.exec(value))) {
       if (current.parent) current = current.parent;
@@ -410,17 +409,29 @@ export function parseInput(input: string) {
   let defs = splitted[0];
   const signatures = splitted[1];
 
-  const types: string[] = [];
+  const rawTypes: string[] = [];
   const matchResult = defs.match(
     /type\s*\w*\s*=(:?\s*[\w "]*)?(:?\s*\|\s*[\w "*]*)*/g,
   );
-  if (matchResult) {
+  if (matchResult)
     matchResult.forEach((r) => {
-      types.push(r);
+      rawTypes.push(r);
       defs = defs.substring(defs.search(r) + r.length);
       defs.trim();
     });
-  }
+
+  const types = rawTypes.map((rawType) => {
+    const [name, rest] = rawType.split("=").map((v) => v.trim());
+
+    return {
+      name: name.replace(/^type/m, "").trim(),
+      type: "variants",
+      variants: rest
+        .split("|")
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0),
+    } satisfies ParsedInput.Type;
+  });
 
   // TODO Split functions
   const functions = defs
@@ -429,38 +440,27 @@ export function parseInput(input: string) {
     .filter((v) => v.length > 0)
     .map((v) => v + "\n;;");
 
-  const [signature, ...examples] = signatures.split("\n");
+  const [rawSignature, ...rawExamples] = signatures.split("\n");
 
   // should use token base parser? -> Not yet
   // TODO: parse signature
-  const signatureParsed = signature;
+  const signature = rawSignature;
 
-  return {
-    types: types.map((type) => {
-      const [name, rest] = type.split("=").map((v) => v.trim());
+  const examples = rawExamples
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0)
+    .flatMap((rawExample) => {
+      const [input, output] = rawExample.split("->").map((e) => e.trim());
+      // ignore partial text
+      if (!input || !output) return [];
 
       return {
-        name: name.replace(/^type/m, "").trim(),
-        type: "varients",
-        varients: rest
-          .split("|")
-          .map((v) => v.trim())
-          .filter((v) => v.length > 0),
+        args: parseConstructor(input.slice(1, -1)),
+        result: parseConstructor(output)[0],
       };
-    }),
-    functions,
-    signature: signatureParsed,
-    examples: examples
-      .map((v) => v.trim())
-      .filter((v) => v.length > 0)
-      .map((example) => {
-        const [input, output] = example.split("->").map((e) => e.trim());
-        return {
-          args: parseConstructor(input.slice(1, -1)),
-          result: parseConstructor(output)[0],
-        };
-      }),
-  } satisfies ParsedInput;
+    });
+
+  return { types, functions, signature, examples } satisfies ParsedInput;
 }
 
 // const input =

@@ -12,6 +12,8 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { SynthesizeResponseData } from "./api/synthesize/route";
+import Link from "next/link";
+import { toast } from "@/hooks/use-toast";
 
 const testInput = `type nat =
 | O
@@ -92,22 +94,24 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       <header className="flex h-12 justify-between bg-neutral-700 px-4 text-white">
-        <section className="flex gap-4">
-          <div className="flex items-center">
+        <section className="flex">
+          <div className="mr-4 flex items-center">
             <h1 className="text-3xl font-semibold">Trio</h1>
           </div>
 
-          <select
-            className="bg-neutral-700 px-2 hover:bg-neutral-600"
-            onChange={(e) => setInput(e.currentTarget.value)}
-          >
-            <option defaultChecked>select examples</option>
-            {Object.entries(examples).map(([name, input]) => (
-              <option value={input} key={name}>
-                {name}
-              </option>
-            ))}
-          </select>
+          <div className="bg-neutral-700 px-4 hover:bg-neutral-600">
+            <select
+              className="h-full w-full bg-inherit"
+              onChange={(e) => setInput(e.currentTarget.value)}
+            >
+              <option defaultChecked>select examples</option>
+              {Object.entries(examples).map(([name, input]) => (
+                <option value={input} key={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <button
             className="px-4 hover:bg-neutral-600"
@@ -128,6 +132,10 @@ export default function Home() {
               navigator.clipboard.writeText(
                 "http://localhost:3000/?input=" + encodeURIComponent(input),
               );
+              toast({
+                description: "Link copied!",
+                duration: 1000,
+              });
             }}
           >
             share links
@@ -135,7 +143,12 @@ export default function Home() {
         </section>
 
         <section className="flex">
-          <button className="px-4 hover:bg-neutral-600">about</button>
+          <Link
+            href="https://psl.hanyang.ac.kr/projects/#trio"
+            className="flex items-center px-4 hover:bg-neutral-600"
+          >
+            <p>about</p>
+          </Link>
         </section>
       </header>
 
@@ -159,7 +172,7 @@ export default function Home() {
           </ResizablePanel>
 
           {/* TODO: Add drag feature to adjust section size */}
-          <ResizableHandle withHandle className="border-neutral-700" />
+          <ResizableHandle className="border-neutral-700" />
 
           {/* output */}
           <ResizablePanel
@@ -178,7 +191,9 @@ export default function Home() {
                   value={output.raw}
                 />
               </ResizablePanel>
-              <ResizableHandle withHandle className="border-neutral-700" />
+
+              <ResizableHandle className="border-neutral-700" />
+
               <ResizablePanel defaultSize={25} className="h-full w-full">
                 <Editor
                   mode="ocaml"
