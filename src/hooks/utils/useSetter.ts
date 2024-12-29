@@ -23,5 +23,6 @@ export function useSetter<T>(
 
     await callback(computed);
     valueRef.current = computed;
+    // eslint-disable-next-line @wogns3623/better-exhaustive-deps/exhaustive-deps
   }, deps);
 }

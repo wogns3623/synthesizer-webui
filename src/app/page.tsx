@@ -92,16 +92,16 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="flex flex-col">
       <header className="flex h-12 justify-between bg-neutral-700 px-4 text-white">
         <section className="flex">
-          <div className="mr-4 flex items-center">
+          <Link href="/" className="mr-4 flex items-center">
             <h1 className="text-3xl font-semibold">Trio</h1>
-          </div>
+          </Link>
 
           <div className="bg-neutral-700 px-4 hover:bg-neutral-600">
             <select
-              className="h-full w-full bg-inherit"
+              className="h-full w-full min-w-36 bg-inherit"
               onChange={(e) => setInput(e.currentTarget.value)}
             >
               <option defaultChecked>select examples</option>
@@ -114,7 +114,7 @@ export default function Home() {
           </div>
 
           <button
-            className="px-4 hover:bg-neutral-600"
+            className="min-w-32 px-4 hover:bg-neutral-600"
             onClick={() => setShowExampleUI((prev) => !prev)}
           >
             {`${showExampleUI ? "hide" : "show"} example ui`}
@@ -144,7 +144,7 @@ export default function Home() {
 
         <section className="flex">
           <Link
-            href="https://psl.hanyang.ac.kr/projects/#trio"
+            href="/about"
             className="flex items-center px-4 hover:bg-neutral-600"
           >
             <p>about</p>

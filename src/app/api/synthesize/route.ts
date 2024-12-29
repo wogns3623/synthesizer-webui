@@ -11,6 +11,7 @@ export type SynthesizeResponseData = {
 export type SynthesizeRequestData = string;
 
 const inputFilePath = "./externs/input.mls";
+const trioPath = "./externs/trio.exe";
 
 export async function POST(request: NextRequest) {
   if (!request.body) return NextResponse.error();
@@ -24,13 +25,13 @@ export async function POST(request: NextRequest) {
 
     await request.body.pipeTo(writableStream);
 
-    // const program = spawn(`./externs/trio ${inputFilePath}`, { timeout:60000 * 2 });
+    // const program = spawn(`${trioPath} ${inputFilePath}`, { timeout:60000 * 2 });
     // return Readable.toWeb(program.stdout);
 
     console.log("Start synthesize input source");
     const result = await new Promise<string>((res, rej) => {
       exec(
-        `./externs/trio ${inputFilePath}`,
+        `${trioPath} ${inputFilePath}`,
         { timeout: 60000 * 2 },
         (err, stdout, stderr) => {
           console.error(

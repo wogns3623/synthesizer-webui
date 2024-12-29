@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:docker": "docker build -t synthesizer-webui .",
+    "run:docker": "docker run -p 3000:3000 synthesizer-webui"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.2",

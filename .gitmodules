@@ -1,0 +1,3 @@
+[submodule "externs/trio"]
+	path = externs/trio
+	url = https://github.com/pslhy/trio.git
