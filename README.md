@@ -2,10 +2,34 @@ Synthesizer web UI
 
 ## Getting Started
 
-First, run the development server:
+First, install the dependencies:
+
+```bash
+npm install
+```
+
+Build external dependencies - trio:
+
+- should have ocaml environment set up
+- if not, follow the instructions in the [trio repository](https://github.com/pslhy/trio)
+
+```bash
+cd externs/trio
+make deps
+make
+```
+
+Run the development server:
 
 ```bash
 npm run dev
+```
+
+## Using Docker
+
+```bash
+npm run build:docker
+npm run start:docker
 ```
 
 ## 각 입력 섹션별 UI view
@@ -45,6 +69,7 @@ npm run dev
 
 ## TODO
 
-- 최상단 header 추가
-- 합성 결과물 하단에 Ocaml form output 추가
-  - trio option이 있다고 함
+- [x] 최상단 header 추가
+  - [ ] About 페이지 추가
+- [ ] 합성 결과물 하단에 Ocaml form output 추가
+  - 조한결 선배님이 개발중
