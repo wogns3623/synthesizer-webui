@@ -70,6 +70,6 @@ npm run start:docker
 ## TODO
 
 - [x] 최상단 header 추가
-  - [x] About 페이지 추가
+  - [x] About 페이지 추가
 - [ ] 합성 결과물 하단에 Ocaml form output 추가
   - 조한결 선배님이 개발중
